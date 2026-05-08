@@ -111,13 +111,31 @@ const changePassword = asyncHandler(async (req, res) => {
     if (!isCurrect) {
         return res.status(400).json(new ApiError(400, "password is wrong", ["password is wrong"]))
     }
+    user.password = newPassword;
+    await user.save({ validateBeforeSave: false })
+    return res.status(200).json(new ApiResponse(200, [], "password change successfully"))
 
 })
+
+const logoutUser = asyncHandler(async (req, res) => {
+    const user = await User.findByIdAndUpdate(req.user?._id, {
+        $set: { refreshToken: '' }
+    }, { returnDocument: "after" })
+    return res.status(200).clearCookie("refreshToken").clearCookie("accessToken").json(new ApiResponse(200, [], "logout successfully"))
+})
+
+
+
+
+
+
+
 
 
 
 export {
     registerUser,
     loginUser,
-    changePassword
+    changePassword,
+    logoutUser
 }
