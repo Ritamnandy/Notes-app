@@ -124,9 +124,35 @@ const logoutUser = asyncHandler(async (req, res) => {
     return res.status(200).clearCookie("refreshToken").clearCookie("accessToken").json(new ApiResponse(200, [], "logout successfully"))
 })
 
+const changeAvatar = asyncHandler(async (req, res) => {
+    const avatarLocalPath = req.file?.path || null;
+    if (!avatarLocalPath) {
+        return res.status(400).json(new ApiError(400, "avatar path is required", ["avatar path is required"]))
+    }
+    const user = await User.findById(req.user?._id)
+    if (!user) {
+        return res.status(404).json(new ApiError(404, "user not found", ["user not found"]))
+    }
+    const avatarCloudinaryPath = await uploadCloudinary(avatarLocalPath);
+    if (!avatarCloudinaryPath) {
+        return res.status(400).json(new ApiError(400, "avatar path is required", ["avatar path is required"]))
+    }
+    user.avatar = avatarCloudinaryPath.url;
+    await user.save({ validateBeforeSave: false })
+    const userDetails = user.select(" - password - refreshToken")
+    return res.status(200).json(new ApiResponse(200, userDetails, "avatar change successfully"))
+})
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user?._id);
+    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id)
 
 
-
+    return res.status(200)
+        .cookie("RefreshToken", refreshToken, options)
+        .cookie("AccessToken", accessToken, options)
+        .json(new ApiResponse(200, { refreshToken: refreshToken, accessToken: accessToken }, "new access Token"))
+})
 
 
 
@@ -137,5 +163,7 @@ export {
     registerUser,
     loginUser,
     changePassword,
-    logoutUser
+    logoutUser,
+    changeAvatar,
+    refreshAccessToken
 }
