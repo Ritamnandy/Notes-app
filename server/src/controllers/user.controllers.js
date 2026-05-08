@@ -94,11 +94,30 @@ const loginUser = asyncHandler(async (req, res) => {
 
 })
 
+const changePassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body
+    if (!oldPassword && !newPassword) {
+        return res.status(400).json(new ApiError(400, "passwords are required", ["passwords are required"]))
+    }
+    if (oldPassword === "" && newPassword === "") {
+        return res.status(400).json(new ApiError(400, "passwords are required", ["passwords are required"]))
+    }
+    const userId = req.user?._id;
+    const user = await User.findById(userId);
+    if (!user) {
+        return res.status(400).json(new ApiError(400, "user not authorized", ["user not authorized"]))
+    }
+    const isCurrect = await user.isPasswordCheck(oldPassword)
+    if (!isCurrect) {
+        return res.status(400).json(new ApiError(400, "password is wrong", ["password is wrong"]))
+    }
 
+})
 
 
 
 export {
     registerUser,
-    loginUser
+    loginUser,
+    changePassword
 }
