@@ -19,7 +19,7 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
         const accessToken = await user.createAccessToken();
         user.refreshToken = refreshToken;
         await user.save({ validateBeforeSave: false })
-        { refreshToken, accessToken }
+        return { refreshToken, accessToken }
     } catch (error) {
         console.log(error);
 
@@ -31,6 +31,7 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
 
 
 const registerUser = asyncHandler(async (req, res) => {
+
     const { userName, email, password } = req.body
     if (!userName || !email || !password) {
         return res.status(400).json(new ApiError(400, "Bad request", ["All fields are required!!"]))
@@ -44,21 +45,24 @@ const registerUser = asyncHandler(async (req, res) => {
         return res.status(409).json(new ApiError(409, "user already exists", ["user already exists"]))
     }
     const avatarLocalPath = req.file?.path || null;
+    console.log(avatarLocalPath);
+
     if (!avatarLocalPath) {
         return res.status(400).json(new ApiError(400, "avatar required", ["avatar required"]))
     }
     const avatarCloudinaryPath = await uploadCloudinary(avatarLocalPath);
     if (!avatarCloudinaryPath) {
-        return res.status(400).json(new ApiError(400, "avatar required", ["avatar required"]))
+        return res.status(400).json(new ApiError(400, "avatar required in cloudinary", ["avatar required"]))
     }
 
     const user = await User.create({ userName: userName.toLowerCase(), email, password, avatar: avatarCloudinaryPath.url })
+    const { accessToken, refreshToken } = await generateAccessTokenAndRefreshToken(user._id)
 
     const createdUser = await User.findById(user._id).select("-password -refreshToken")
     if (!createdUser) {
         return res.status(500).json(new ApiError(500, "Somthing went wrong", ["Somthing wrong please try again"]))
     }
-    return res.status(201).json(new ApiResponse(201, createdUser, "user created successfully",))
+    return res.status(201).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options).json(new ApiResponse(201, { refreshT: refreshToken, accessT: accessToken, createdUser }, "user created successfully",))
 
 })
 

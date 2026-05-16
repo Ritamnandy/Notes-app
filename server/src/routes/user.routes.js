@@ -19,14 +19,12 @@ const router = express.Router();
 
 
 
-router.route("/register").path(registerUser)
-router.route("/login").path(loginUser)
-router.route("/logout").path(logoutUser)
-
-
-
-
-
+router.route("/register").post(upload.single('avatar'), registerUser)
+router.route("/login").post(loginUser)
+router.route("/logout").post(verifyJWT, logoutUser)
+router.route("/refreshaccesstoken").post(verifyJWT, refreshAccessToken)
+router.route("/changepassword").post(verifyJWT, changePassword)
+router.route("/changeavatar").post(verifyJWT, upload.single('avatar'), changeAvatar)
 
 
 export default router; 

@@ -13,6 +13,8 @@ cloudinary.config({
 });
 
 const uploadCloudinary = async (filePath) => {
+    // console.log(cloudinary.config());
+
     try {
         if (!filePath) {
             return null;
@@ -22,9 +24,11 @@ const uploadCloudinary = async (filePath) => {
             .upload(filePath, {
                 resource_type: "auto",
             })
+        fs.unlinkSync(filePath);
         return response;
     } catch (error) {
-        console.log(error);
+        fs.unlinkSync(filePath);
+        console.log("cloudinary error:- ", error);
         return null;
 
     }
